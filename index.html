@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Treasure Hunt Map Game</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap');
+
+  :root {
+    --color-bg: #ffffff;
+    --color-text-primary: #111827;
+    --color-text-secondary: #6b7280;
+    --color-accent: #111111;
+    --color-hot: #ef4444;    /* red-500 */
+    --color-warm: #fbbf24;   /* amber-400 */
+    --color-cold: #3b82f6;   /* blue-500 */
+    --color-found-bg: #e0f2fe; /* light sky blue */
+    --spacing: 1rem;
+    --border-radius: 0.75rem;
+    --shadow: 0 2px 6px rgb(0 0 0 / 0.1);
+    --transition: 0.3s ease;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background: var(--color-bg);
+    color: var(--color-text-primary);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    background: var(--color-bg);
+    border-bottom: 1px solid #e5e7eb;
+    box-shadow: var(--shadow);
+    z-index: 100;
+  }
+
+  nav {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--spacing);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--color-accent);
+  }
+
+  .nav-items {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  button#howToPlayBtn {
+    background: none;
+    border: none;
+    color: var(--color-accent);
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius);
+    transition: background-color var(--transition), color var(--transition);
+  }
+  button#howToPlayBtn:hover,
+  button#howToPlayBtn:focus {
+    background-color: #f3f4f6;
+    outline: none;
+  }
+
+  main {
+    flex-grow: 1;
+    max-width: 1200px;
+    margin: 2rem auto 4rem auto;
+    padding: 0 var(--spacing);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    text-align: center;
+  }
+
+  p.instructions {
+    font-size: 1.125rem;
+    color: var(--color-text-secondary);
+    max-width: 600px;
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  #scoreboard {
+    font-size: 1.125rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+  }
+
+  #hint {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    min-height: 2rem;
+    text-align: center;
+    margin-bottom: 1rem;
+    transition: color var(--transition);
+  }
+  #hint.hot {
+    color: var(--color-hot);
+  }
+  #hint.warm {
+    color: var(--color-warm);
+  }
+  #hint.cold {
+    color: var(--color-cold);
+  }
+
+  #map {
+    display: grid;
+    grid-template-columns: repeat(10, 3rem);
+    grid-template-rows: repeat(10, 3rem);
+    gap: 0.5rem;
+    user-select: none;
+    margin-bottom: 2rem;
+  }
+
+  .cell {
+    background: #f9fafb;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: transparent;
+    position: relative;
+    transition: background-color var(--transition), color var(--transition), transform 0.2s ease;
+  }
+
+  .cell:hover:not(.found):not(.disabled) {
+    background-color: #f3f4f6;
+    transform: scale(1.05);
+  }
+
+  .cell.found {
+    background-color: var(--color-found-bg);
+    color: #2563eb; /* blue-600 */
+    cursor: default;
+    pointer-events: none;
+    box-shadow:
+      0 0 8px 3px #3b82f6aa,
+      inset 0 0 12px 2px #2563eb88;
+    animation: sparkle 1.2s ease-in-out alternate infinite;
+  }
+
+  @keyframes sparkle {
+    0%, 100% {
+      text-shadow:
+        0 0 4px #2563eb88,
+        0 0 12px #3b82f6cc;
+    }
+    50% {
+      text-shadow:
+        0 0 10px #2563ebff,
+        0 0 16px #3b82f6ff;
+    }
+  }
+
+  button#restartBtn {
+    background-color: var(--color-accent);
+    color: white;
+    border: none;
+    padding: 0.85rem 1.75rem;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    font-size: 1.125rem;
+    cursor: pointer;
+    transition: background-color var(--transition);
+    box-shadow: var(--shadow);
+  }
+  button#restartBtn:hover,
+  button#restartBtn:focus {
+    background-color: #1f2937; /* darker charcoal */
+    outline: none;
+  }
+
+  /* Modal styles */
+
+  #modalOverlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(17, 24, 39, 0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+  }
+
+  #modalOverlay.active {
+    display: flex;
+  }
+
+  #howToPlayModal {
+    background: var(--color-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    max-width: 480px;
+    width: 90%;
+    padding: 2rem;
+    color: var(--color-text-primary);
+    font-size: 1rem;
+    line-height: 1.5;
+    position: relative;
+  }
+
+  #howToPlayModal h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-top: 0;
+    margin-bottom: 1rem;
+  }
+
+  #howToPlayModal p,
+  #howToPlayModal ul {
+    margin-bottom: 1rem;
+    color: var(--color-text-secondary);
+  }
+
+  #howToPlayModal ul {
+    padding-left: 1.25rem;
+  }
+  #howToPlayModal ul li {
+    margin-bottom: 0.5rem;
+  }
+
+  #modalCloseBtn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: color var(--transition);
+  }
+
+  #modalCloseBtn:hover,
+  #modalCloseBtn:focus {
+    color: var(--color-accent);
+    outline: none;
+  }
+</style>
+</head>
+<body>
+<header>
+  <nav>
+    <div class="logo" aria-label="Treasure Hunt Map Game Logo">🏴‍☠️ Treasure Hunt</div>
+    <div class="nav-items">
+      <button id="howToPlayBtn" aria-haspopup="dialog" aria-controls="howToPlayModal" aria-expanded="false">How to Play</button>
+    </div>
+  </nav>
+</header>
+<main>
+  <h1>Treasure Hunt Map</h1>
+  <p class="instructions">Click on the map squares to search for treasures. Get hints like <strong>hot</strong>, <strong>warm</strong>, or <strong>cold</strong> based on how close you are!</p>
+  <div id="scoreboard" aria-live="polite" aria-atomic="true">Attempts: 0 | Treasures found: 0 / 5</div>
+  <div id="hint" role="status" aria-live="polite"></div>
+  <div id="map" role="grid" aria-label="Treasure Hunt Map with 10 by 10 grid"></div>
+  <button id="restartBtn" aria-label="Restart game">Restart Game</button>
+</main>
+
+<!-- Modal Container -->
+<div id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDesc">
+  <section id="howToPlayModal" tabindex="-1">
+    <button id="modalCloseBtn" aria-label="Close How to Play modal">&times;</button>
+    <h2 id="modalTitle">How to Play</h2>
+    <p>Welcome to Treasure Hunt! Your goal is to find all hidden treasures on the map by clicking on the squares.</p>
+    <ul>
+      <li>Each treasure is hidden randomly each game.</li>
+      <li>Click on the map squares to search for treasures.</li>
+      <li>After each click, you'll get a hint:</li>
+      <ul>
+        <li><strong>HOT 🔥</strong> means very close to a treasure.</li>
+        <li><strong>WARM 😊</strong> means somewhat close.</li>
+        <li><strong>COLD 🧊</strong> means far away.</li>
+        <li>Hints also tell you if you are getting <em>Warmer</em> or <em>Colder</em> compared to your last click.</li>
+      </ul>
+      <li>Find all treasures as quickly as possible!</li>
+      <li>Your attempts are tracked and displayed.</li>
+      <li>Click "Restart Game" to play again.</li>
+    </ul>
+    <p>Good luck, treasure hunter! 🏴‍☠️💎</p>
+  </section>
+</div>
+
+<script>
+  (() => {
+    const mapSize = 10;
+    const treasuresCount = 5;
+    let treasures = [];
+    let foundTreasures = new Set();
+    let attempts = 0;
+    let lastDistance = null;
+
+    const mapEl = document.getElementById('map');
+    const scoreboardEl = document.getElementById('scoreboard');
+    const hintEl = document.getElementById('hint');
+    const restartBtn = document.getElementById('restartBtn');
+
+    // Modal elements and Buttons
+    const modalOverlay = document.getElementById('modalOverlay');
+    const howToPlayBtn = document.getElementById('howToPlayBtn');
+    const modalCloseBtn = document.getElementById('modalCloseBtn');
+    const howToPlayModal = document.getElementById('howToPlayModal');
+
+    // Utility function: Euclidean distance between two points
+    function distance(x1, y1, x2, y2) {
+      return Math.sqrt((x2 - x1)**2 + (y2 - y1)**2);
+    }
+
+    // Initialize the game
+    function initGame() {
+      treasures = [];
+      foundTreasures.clear();
+      attempts = 0;
+      lastDistance = null;
+      hintEl.textContent = '';
+      hintEl.className = '';
+      updateScoreboard();
+      mapEl.innerHTML = '';
+
+      // Place treasures randomly
+      while (treasures.length < treasuresCount) {
+        const pos = {
+          x: Math.floor(Math.random() * mapSize),
+          y: Math.floor(Math.random() * mapSize)
+        };
+        // Avoid duplicates
+        if (!treasures.some(t => t.x === pos.x && t.y === pos.y)) {
+          treasures.push(pos);
+        }
+      }
+
+      // Create grid cells
+      for (let row = 0; row < mapSize; row++) {
+        for (let col = 0; col < mapSize; col++) {
+          const cell = document.createElement('button');
+          cell.className = 'cell';
+          cell.setAttribute('role', 'gridcell');
+          cell.setAttribute('data-x', col);
+          cell.setAttribute('data-y', row);
+          cell.setAttribute('aria-label', `Map cell at column ${col + 1} row ${row + 1}`);
+          cell.addEventListener('click', onCellClick);
+          mapEl.appendChild(cell);
+        }
+      }
+    }
+
+    // Update scoreboard text
+    function updateScoreboard() {
+      scoreboardEl.textContent = `Attempts: ${attempts} | Treasures found: ${foundTreasures.size} / ${treasuresCount}`;
+    }
+
+    // Handle cell click
+    function onCellClick(e) {
+      const cell = e.currentTarget;
+      const x = parseInt(cell.getAttribute('data-x'), 10);
+      const y = parseInt(cell.getAttribute('data-y'), 10);
+
+      // Ignore clicks on found treasures
+      if (foundTreasures.has(y * mapSize + x)) return;
+
+      attempts++;
+      updateScoreboard();
+
+      // Check if clicked on a treasure
+      const treasureIndex = treasures.findIndex(t => t.x === x && t.y === y);
+      if (treasureIndex !== -1) {
+        // Treasure found
+        foundTreasures.add(y * mapSize + x);
+        revealTreasure(cell);
+        hintEl.textContent = "You found a treasure! 💎";
+        hintEl.className = 'hot';
+        lastDistance = null;
+
+        if (foundTreasures.size === treasuresCount) {
+          endGame(true);
+        }
+        return;
+      }
+
+      // Calculate distance to nearest treasure
+      const distances = treasures
+        .filter((t) => !foundTreasures.has(t.y * mapSize + t.x))
+        .map((t) => distance(x, y, t.x, t.y));
+
+      if (distances.length === 0) return; // No treasures left
+
+      const minDistance = Math.min(...distances);
+
+      // Determine hint level based on distance thresholds
+      // Distances relative to grid: 0 = treasure spot, >0 close/far
+      let hintText = '';
+      let hintClass = '';
+
+      if (minDistance === 0) {
+        hintText = "You found a treasure! 💎";
+        hintClass = 'hot';
+      } else if (minDistance <= 1.5) {
+        hintText = "HOT 🔥";
+        hintClass = 'hot';
+      } else if (minDistance <= 3) {
+        hintText = "Warm 😊";
+        hintClass = 'warm';
+      } else {
+        hintText = "Cold 🧊";
+        hintClass = 'cold';
+      }
+
+      // Also compare distance to last clicked position to show "warmer" or "colder"
+      if (lastDistance !== null) {
+        if (minDistance < lastDistance) {
+          hintText += " (Warmer)";
+          hintClass = 'hot';
+        } else if (minDistance > lastDistance) {
+          hintText += " (Colder)";
+          hintClass = 'cold';
+        } else {
+          // Same distance no change
+        }
+      }
+
+      hintEl.textContent = hintText;
+      hintEl.className = hintClass;
+      lastDistance = minDistance;
+    }
+
+    // Animate treasure reveal
+    function revealTreasure(cell) {
+      cell.classList.add('found');
+      cell.textContent = '💎';
+      // Small sparkle animation handled by CSS keyframes
+    }
+
+    // End game message
+    function endGame(won) {
+      if (won) {
+        hintEl.textContent = `🎉 Congratulations! You found all treasures in ${attempts} attempts.`;
+        hintEl.className = 'hot';
+      } else {
+        hintEl.textContent = `Game Over`;
+        hintEl.className = 'cold';
+      }
+      // Disable all cells
+      document.querySelectorAll('.cell').forEach(cell => {
+        cell.disabled = true;
+        cell.classList.add('disabled');
+      });
+    }
+
+    restartBtn.addEventListener('click', initGame);
+
+    // Modal open/close handlers
+    function openModal() {
+      modalOverlay.classList.add('active');
+      howToPlayBtn.setAttribute('aria-expanded', 'true');
+      howToPlayModal.focus();
+      // Disable background scroll
+      document.body.style.overflow = 'hidden';
+    }
+    function closeModal() {
+      modalOverlay.classList.remove('active');
+      howToPlayBtn.setAttribute('aria-expanded', 'false');
+      howToPlayBtn.focus();
+      // Enable background scroll
+      document.body.style.overflow = '';
+    }
+
+    howToPlayBtn.addEventListener('click', openModal);
+    modalCloseBtn.addEventListener('click', closeModal);
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modalOverlay.classList.contains('active')) {
+        closeModal();
+      }
+    });
+
+    // Close modal if click outside modal content
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) {
+        closeModal();
+      }
+    });
+
+    // Initialize game on load
+    initGame();
+  })();
+</script>
+</body>
+</html>
+
